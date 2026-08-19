@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Height Comparison</title>
+<style>
+:root{
+  --bg:#12151c; --panel:#1a1f2b; --panel2:#222937; --line:#333c4e;
+  --txt:#e6eaf2; --dim:#93a0b8; --acc:#6aa9ff; --acc2:#ffb347; --danger:#ff6b6b;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--txt);font:14px/1.4 system-ui,Segoe UI,Roboto,sans-serif;display:flex;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer}
+button:hover{border-color:var(--acc);background:#2a3243}
+button.primary{background:var(--acc);color:#0a0e15;border-color:var(--acc);font-weight:600}
+button.primary:hover{filter:brightness(1.1)}
+button.mini{padding:2px 6px;font-size:12px;line-height:1.2}
+button.on{background:var(--acc);color:#0a0e15;border-color:var(--acc)}
+input[type=text],input[type=number],select{background:#0f131b;border:1px solid var(--line);border-radius:6px;padding:5px 7px;width:100%}
+input[type=range]{width:100%;accent-color:var(--acc)}
+input[type=color]{background:none;border:1px solid var(--line);border-radius:6px;height:28px;width:100%;padding:2px;cursor:pointer}
+label{font-size:12px;color:var(--dim);display:block;margin-bottom:3px}
+hr{border:none;border-top:1px solid var(--line);margin:12px 0}
+
+#side{width:330px;min-width:330px;height:100%;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column}
+#side header{padding:12px 14px;border-bottom:1px solid var(--line)}
+#side header h1{margin:0;font-size:15px;letter-spacing:.4px}
+#side header p{margin:3px 0 0;font-size:11px;color:var(--dim)}
+#tabs{display:flex;border-bottom:1px solid var(--line)}
+#tabs button{flex:1;border:none;border-radius:0;background:none;padding:9px 0;color:var(--dim);border-bottom:2px solid transparent}
+#tabs button.on{color:var(--txt);border-bottom-color:var(--acc);background:none}
+.pane{display:none;overflow-y:auto;padding:12px 14px;flex:1}
+.pane.on{display:block}
+.row{display:flex;gap:6px;align-items:center}
+.row>*{flex:1}
+.row .fix{flex:0 0 auto}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.field{margin-bottom:9px}
+.sw{width:30px;height:24px;padding:1px;flex:0 0 auto}
+
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;margin-bottom:8px;overflow:hidden}
+.card.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
+.card .head{display:grid;grid-template-columns:4px 32px 1fr auto;gap:9px;align-items:center;padding:8px 9px;cursor:pointer}
+.card.open .head{border-bottom:1px solid var(--line)}
+.card .bar{height:38px;border-radius:2px}
+.card .thumb{width:32px;height:38px;object-fit:contain;background:#0d1017;border-radius:4px}
+.card .nm{min-width:0;overflow:hidden}
+.card .nm b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .nm span{font-size:11px;color:var(--dim)}
+.card .arrows{display:flex;gap:3px}
+.card .body{padding:10px;display:none}
+.card.open .body{display:block}
+.card .body input[type=text],.card .body input[type=number],.card .body select{height:30px}
+.card .body input[type=color]{height:30px}
+
+.grp{border-top:1px solid var(--line);margin-top:11px;padding-top:10px}
+.grp h4{margin:0 0 8px;font:600 10px/1 system-ui,sans-serif;letter-spacing:.9px;text-transform:uppercase;color:var(--dim)}
+.tg{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.tg button{padding:7px 6px;font-size:12px}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{flex:1;border:none;border-radius:0;font-size:12px;padding:7px 4px}
+.seg button+button{border-left:1px solid var(--line)}
+.lbl{display:flex;justify-content:space-between;gap:6px;font-size:11px;color:var(--dim);margin-bottom:5px}
+.lbl b{color:var(--txt);font-weight:600}
+.inline{display:grid;grid-template-columns:34px 1fr;gap:7px;align-items:center}
+.inline.rev{grid-template-columns:1fr auto}
+.card .body .danger{color:var(--danger);border-color:#54303a;background:#241a1f}
+.card .body .danger:hover{border-color:var(--danger);background:#2f2027}
+
+#stage{flex:1;position:relative;min-width:0}
+canvas{display:block;width:100%;height:100%;cursor:default}
+#hud{position:absolute;left:10px;top:10px;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100% - 20px)}
+#hud button{backdrop-filter:blur(6px);background:rgba(26,31,43,.85)}
+#hint{position:absolute;left:10px;bottom:10px;font-size:11px;color:var(--dim);background:rgba(18,21,28,.75);padding:5px 9px;border-radius:6px;pointer-events:none}
+#drop{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(106,169,255,.15);border:3px dashed var(--acc);font-size:18px;font-weight:600;pointer-events:none}
+#drop.on{display:flex}
+
+.modal{position:fixed;inset:0;background:rgba(5,7,11,.8);display:none;align-items:center;justify-content:center;z-index:50}
+.modal.on{display:flex}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;max-width:min(92vw,860px);max-height:92vh;overflow:auto}
+#calWrap{position:relative;background:repeating-conic-gradient(#242a36 0 25%,#1b202a 0 50%) 50%/18px 18px;border-radius:8px;overflow:hidden;touch-action:none}
+#calWrap img{display:block;max-width:100%;max-height:62vh;user-select:none;-webkit-user-drag:none}
+.calLine{position:absolute;left:0;right:0;height:0;border-top:2px solid;cursor:ns-resize}
+.calLine .tag{position:absolute;left:4px;top:-19px;font-size:11px;font-weight:600;padding:1px 5px;border-radius:4px;color:#0a0e15}
+.calLine .grab{position:absolute;left:0;right:0;top:-9px;height:18px}
+#lineFloor{border-color:#4ade80}
+#lineFloor .tag{background:#4ade80}
+#lineHead{border-color:#ff6b6b}
+#lineHead .tag{background:#ff6b6b}
+.icobtn{display:flex;align-items:center;justify-content:center;padding:0;height:30px;color:var(--dim)}
+.icobtn:hover{color:var(--acc)}
+.inline.pick{grid-template-columns:34px 32px 1fr}
+#pickWrap{position:relative;display:inline-block;background:repeating-conic-gradient(#242a36 0 25%,#1b202a 0 50%) 50%/18px 18px;border-radius:8px;overflow:hidden;line-height:0}
+#pickCv{display:block;cursor:crosshair;max-width:100%}
+#loupe{position:absolute;display:none;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:4px;z-index:5;line-height:0}
+#loupeCv{display:block;border-radius:3px}
+#loupeHex{font:700 11px/18px ui-monospace,monospace;text-align:center;margin-top:4px;border-radius:3px}
+#pickSwatches{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.swb{width:30px;height:30px;border-radius:6px;border:1px solid var(--line);padding:0;flex:0 0 auto}
+.swb:hover{transform:scale(1.08)}
+#pickPrev{height:32px;border-radius:6px;border:1px solid var(--line);flex:0 0 46px}
+#pickHex{font-family:ui-monospace,monospace}
+small.h{color:var(--dim);font-size:11px;display:block;margin-top:6px}
+.empty{color:var(--dim);text-align:center;padding:26px 10px;font-size:13px}
+</style>
+</head>
+<body>
+
+<div id="side">
+  <header>
+    <h1>Height Comparison</h1>
+    <p>Local &middot; offline &middot; your PNGs never leave your machine</p>
+  </header>
+  <div id="tabs">
+    <button data-tab="pj" class="on">Characters</button>
+    <button data-tab="esc">Scene</button>
+    <button data-tab="arch">File</button>
+  </div>
+
+  <div class="pane on" id="pane-pj">
+    <div class="row" style="margin-bottom:10px">
+      <button class="primary" id="btnAdd">+ Load PNGs</button>
+      <button class="fix" id="btnArrange" title="Lay them out in a row">Arrange</button>
+    </div>
+    <input type="file" id="fileImgs" accept="image/*" multiple hidden>
+    <div id="list"></div>
+  </div>
+
+  <div class="pane" id="pane-esc">
+    <div class="field"><label>Background scale (mugshot style)</label>
+      <div class="row">
+        <button id="tRuler" class="on">Scale</button>
+        <button id="tGround" class="on">Floor</button>
+        <button id="tLabels" class="on">Names</button>
+      </div>
+    </div>
+    <div class="field"><label>Units</label>
+      <select id="units">
+        <option value="both">1.85 m (6'1")</option>
+        <option value="m">1.85 m</option>
+        <option value="cm">185 cm</option>
+        <option value="ft">6'1"</option>
+      </select>
+    </div>
+    <div class="field"><label>Imperial notation</label>
+      <select id="impStyle">
+        <option value="tick">6'1"</option>
+        <option value="word">6 ft 1 in</option>
+      </select>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Line every</label>
+        <select id="stepPreset">
+          <option value="1">1 in</option><option value="6">6 in</option>
+          <option value="12">1 ft</option><option value="2.54">1 cm</option>
+          <option value="10">10 cm</option><option value="25">25 cm</option>
+          <option value="50">50 cm</option><option value="100">1 m</option>
+          <option value="custom">Custom…</option>
+        </select></div>
+      <div class="field"><label>Label every</label>
+        <select id="labelPreset">
+          <option value="6">6 in</option><option value="12">1 ft</option>
+          <option value="24">2 ft</option><option value="50">50 cm</option>
+          <option value="100">1 m</option><option value="custom">Custom…</option>
+        </select></div>
+    </div>
+    <div class="grid2" id="customStepRow" style="display:none">
+      <div class="field"><label>Line every (cm)</label><input type="number" id="rulerStep" value="50" min="0.5" step="0.5"></div>
+      <div class="field"><label>Label every (cm)</label><input type="number" id="rulerLabel" value="100" min="0.5" step="0.5"></div>
+    </div>
+    <hr>
+    <div class="field"><label>Silhouettes</label>
+      <div class="row"><button id="tSil">Silhouette all</button><button id="tOutlineAll" class="fix" title="Turn the outline on for every character">Outline all</button></div>
+    </div>
+    <div class="field"><label>Silhouette fill</label>
+      <div class="row"><button id="tUniform">One color for all</button><input type="color" id="silColor" value="#000000" class="fix" style="flex:0 0 60px"></div>
+      <small class="h">Off = each character uses its own color. On = everyone gets the color on the right.</small>
+    </div>
+    <div class="field"><label>Name labels</label>
+      <div class="row"><button id="tNameColors">Tint names with character color</button></div>
+    </div>
+    <hr>
+    <div class="field"><label>Background</label>
+      <div class="row"><input type="color" id="bgColor" value="#1b1f27"><button class="fix" id="btnBg">Image…</button><button class="fix" id="btnBgClear" title="Remove background image">&#10005;</button></div>
+      <input type="file" id="fileBg" accept="image/*" hidden>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Fit</label><select id="bgMode"><option value="cover">Cover</option><option value="contain">Contain</option><option value="stretch">Stretch</option><option value="tile">Tile</option></select></div>
+      <div class="field"><label>Background opacity</label><input type="range" id="bgOpacity" min="0" max="1" step="0.01" value="1"></div>
+    </div>
+    <hr>
+    <div class="grid2">
+      <div class="field"><label>Scale color</label><input type="color" id="rulerColor" value="#8fa4c4"></div>
+      <div class="field"><label>Text color</label><input type="color" id="textColor" value="#e6eaf2"></div>
+    </div>
+    <div class="field"><label>Text size <span id="fsVal" style="color:var(--txt)">16</span></label><input type="range" id="fontSize" min="8" max="48" step="1" value="16"></div>
+    <div class="field"><label>Spacing when arranging <span id="gapVal" style="color:var(--txt)">15 cm</span></label><input type="range" id="gap" min="-120" max="200" step="1" value="15"></div>
+  </div>
+
+  <div class="pane" id="pane-arch">
+    <div class="field"><label>Export image</label>
+      <div class="row"><select id="expScale"><option value="1">1x</option><option value="2" selected>2x</option><option value="3">3x</option><option value="4">4x</option></select>
+      <button class="primary fix" id="btnExport">PNG</button></div>
+      <small class="h">Crops to the characters plus a margin. Transparent background if you turn the background off.</small>
+    </div>
+    <div class="field"><label>Exported PNG background</label>
+      <div class="row"><button id="tExpBg" class="on">Include background</button></div>
+    </div>
+    <hr>
+    <div class="field"><label>Project</label>
+      <div class="row"><button id="btnSave">Save .json</button><button id="btnLoad">Open .json</button></div>
+      <input type="file" id="fileProj" accept=".json,application/json" hidden>
+      <small class="h">Saves characters, calibration, background and settings (images included).</small>
+    </div>
+    <hr>
+    <div class="field"><button id="btnClear" style="width:100%;border-color:var(--danger);color:var(--danger)">Clear everything</button></div>
+    <small class="h">Autosaves in this browser. If you open the file from another folder, use Save/Open .json.</small>
+    <hr>
+    <small class="h"><b>Shortcuts:</b> drag a character = move &middot; Shift+drag = raise/lower &middot; wheel = zoom &middot; middle button or space+drag = pan &middot; Del = delete selected &middot; F = fit to view</small>
+  </div>
+</div>
+
+<div class="modal" id="pickModal"><div class="box" style="text-align:center">
+  <div class="row" style="margin-bottom:10px;text-align:left">
+    <b style="flex:1">Pick a color &mdash; <span id="pickName"></span></b>
+    <button class="fix" id="pickEyedrop" title="Pick any pixel on screen">Screen eyedropper</button>
+    <button class="fix" id="pickClose">Close</button>
+  </div>
+  <div id="pickWrap">
+    <canvas id="pickCv"></canvas>
+    <div id="loupe"><canvas id="loupeCv"></canvas><div id="loupeHex">&mdash;</div></div>
+  </div>
+  <div class="lbl" style="margin:12px 0 6px;text-align:left"><span>Most common colors in this image</span></div>
+  <div id="pickSwatches"></div>
+  <div class="row">
+    <div id="pickPrev"></div>
+    <input type="text" id="pickHex" value="#000000">
+    <button class="primary fix" id="pickOk">Use this color</button>
+  </div>
+</div></div>
+
+<div id="stage">
+  <canvas id="cv"></canvas>
+  <div id="hud">
+    <button id="btnFit">Fit (F)</button>
+    <button id="btnZoomIn">+</button>
+    <button id="btnZoomOut">&minus;</button>
+  </div>
+  <div id="hint">Drag PNGs here to add them</div>
+  <div id="drop">Drop the PNGs</div>
+</div>
+
+<div class="modal" id="calModal"><div class="box">
+  <div class="row" style="margin-bottom:10px"><b style="flex:1">Calibrate: <span id="calName"></span></b><button id="calClose" class="fix">Close</button></div>
+  <div id="calWrap">
+    <img id="calImg" alt="">
+    <div class="calLine" id="lineFloor"><div class="grab"></div><div class="tag">FLOOR</div></div>
+    <div class="calLine" id="lineHead"><div class="grab"></div><div class="tag">HEAD</div></div>
+  </div>
+  <small class="h">Drag the lines. <b>FLOOR</b> = where the feet rest. <b>HEAD</b> = the real top of the skull (ignore guitars, weapons, cat ears, hats… anything sticking out still gets drawn, it just doesn't count toward the height).</small>
+  <div class="row" style="margin-top:10px">
+    <div><label>Character height</label><input type="text" id="calHeight" placeholder="1.85 / 185cm / 6'1&quot;"></div>
+    <button class="fix" id="calAuto" style="align-self:end">Auto (crop)</button>
+    <button class="primary fix" id="calOk" style="align-self:end">Done</button>
+  </div>
+</div></div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const cv = $("#cv"), ctx = cv.getContext("2d");
+let uid = 1;
+const PALETTE = ["#ff6b6b","#6aa9ff","#4ade80","#ffb347","#c084fc","#22d3ee","#f472b6","#a3e635","#fb923c","#38bdf8"];
+
+const S = {
+  chars: [],
+  set: {
+    ruler:true, ground:true, labels:true, rulerStep:50, rulerLabel:100,
+    units:"both", impStyle:"tick",
+    globalSil:false, uniformSil:false, silColor:"#000000", nameColors:false,
+    bgColor:"#1b1f27", bgSrc:null, bgMode:"cover", bgOpacity:1,
+    rulerColor:"#8fa4c4", textColor:"#e6eaf2", fontSize:16, gap:15, expBg:true
+  },
+  view:{ ppc:1.6, camX:-60, groundFrac:0.88 },
+  sel:null
+};
+let bgImg = null;
+
+/* ---------- helpers ---------- */
+function parseHeight(str){
+  if(str==null) return null;
+  let s=String(str).trim().toLowerCase().replace(",",".");
+  if(!s) return null;
+  let m = s.match(/^(\d+(?:\.\d+)?)\s*(?:'|ft|feet|foot)\s*(\d+(?:\.\d+)?)?\s*(?:"|in|inch|inches)?$/);
+  if(m) return (parseFloat(m[1])*12 + (parseFloat(m[2])||0))*2.54;
+  m = s.match(/^(\d+(?:\.\d+)?)\s*(cm|m|mm|in|"|ft|')?$/);
+  if(!m) return null;
+  let v=parseFloat(m[1]), u=m[2];
+  if(u==="cm") return v;
+  if(u==="m") return v*100;
+  if(u==="mm") return v/10;
+  if(u==="in"||u==='"') return v*2.54;
+  if(u==="ft"||u==="'") return v*30.48;
+  return v<=3.5 ? v*100 : v;   // no unit: 1.85 -> m, 185 -> cm
+}
+function ftParts(cm){
+  const ti=cm/2.54;
+  let ft=Math.floor(ti/12), inch=Math.round(ti-ft*12);   // whole inches: 180 cm -> 5'11"
+  if(inch>=12){ ft++; inch-=12; }
+  return {ft, inch};
+}
+function fmtFt(cm, dropZeroInches){
+  const {ft,inch}=ftParts(cm);
+  const iStr = String(inch);
+  if(S.set.impStyle==="word"){
+    if(ft===0) return iStr+" in";
+    return dropZeroInches && inch===0 ? ft+" ft" : ft+" ft "+iStr+" in";
+  }
+  if(ft===0) return iStr+'"';
+  return dropZeroInches && inch===0 ? ft+"'" : ft+"'"+iStr+'"';
+}
+function fmtM(cm){
+  return cm>=100 ? (cm/100).toFixed(2).replace(/0+$/,"").replace(/\.$/,"")+" m" : Math.round(cm)+" cm";
+}
+function fmtH(cm){
+  const u=S.set.units;
+  if(u==="m") return fmtM(cm);
+  if(u==="cm") return Math.round(cm)+" cm";
+  if(u==="ft") return fmtFt(cm,false);
+  return fmtM(cm)+" ("+fmtFt(cm,false)+")";
+}
+function fmtRuler(cm){
+  const u=S.set.units;
+  if(u==="cm") return Math.round(cm)+" cm";
+  if(u==="m") return fmtM(cm);
+  if(u==="ft") return fmtFt(cm,true);
+  return fmtM(cm)+" ("+fmtFt(cm,true)+")";
+}
+const loadImg = src => new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=src; });
+
+function alphaBBox(img){
+  const MAX=700, sc=Math.min(1,MAX/Math.max(img.width,img.height));
+  const w=Math.max(1,Math.round(img.width*sc)), h=Math.max(1,Math.round(img.height*sc));
+  const c=document.createElement("canvas"); c.width=w; c.height=h;
+  const x=c.getContext("2d",{willReadFrequently:true}); x.drawImage(img,0,0,w,h);
+  let d; try{ d=x.getImageData(0,0,w,h).data; }catch(e){ return {top:0,bottom:img.height,left:0,right:img.width}; }
+  let t=h,b=-1,l=w,r=-1;
+  for(let y=0;y<h;y++) for(let px=0;px<w;px++){
+    if(d[(y*w+px)*4+3]>12){ if(y<t)t=y; if(y>b)b=y; if(px<l)l=px; if(px>r)r=px; }
+  }
+  if(b<0) return {top:0,bottom:img.height,left:0,right:img.width};
+  return {top:t/sc, bottom:(b+1)/sc, left:l/sc, right:(r+1)/sc};
+}
+function invalidate(c){ c._fx=null; c._fxKey=null; }
+
+/* ---------- character model ---------- */
+function metrics(c){
+  const px = Math.max(1, c.floorPy - c.headPy);
+  const cmPerPx = c.heightCm / px;           // world cm per image pixel
+  const wCm = c.img.width * cmPerPx;
+  const topCm = c.floorPy * cmPerPx + c.yOff;              // top edge of the image, above the floor
+  const botCm = (c.floorPy - c.img.height) * cmPerPx + c.yOff;
+  return {cmPerPx, wCm, topCm, botCm, hCm: c.img.height*cmPerPx};
+}
+function fillColor(c){ return S.set.uniformSil ? S.set.silColor : c.color; }
+function tinted(img,w,h,color){
+  const cc=document.createElement("canvas"); cc.width=w; cc.height=h;
+  const x=cc.getContext("2d");
+  x.drawImage(img,0,0,w,h);
+  x.globalCompositeOperation="source-in";
+  x.fillStyle=color; x.fillRect(0,0,w,h);
+  return cc;
+}
+/* Builds the drawable for a character: silhouette fill and/or colored outline,
+   baked into one canvas with `padPx` of breathing room on every side. */
+function buildFX(c){
+  const m=metrics(c), w=c.img.width, h=c.img.height;
+  const sil = S.set.globalSil || c.silhouette;
+  const fill = fillColor(c);
+  const padPx = c.outline ? Math.max(1, Math.round((c.outlineCm||1.5)/m.cmPerPx)) : 0;
+  const key = (sil? "s"+fill : "img") + "|" + (c.outline? c.outlineColor+"@"+padPx : "") ;
+  if(c._fxKey===key && c._fx) return c._fx;
+  if(!sil && !padPx){ c._fx=c.img; c._fxKey=key; c._fxPad=0; return c.img; }
+
+  const out=document.createElement("canvas");
+  out.width=w+2*padPx; out.height=h+2*padPx;
+  const g=out.getContext("2d");
+  if(padPx>0){
+    const mask=tinted(c.img,w,h,c.outlineColor);
+    const N=28;
+    for(let ring of [1,0.55]){
+      for(let i=0;i<N;i++){
+        const a=(i+(ring===1?0:0.5))/N*Math.PI*2;
+        g.drawImage(mask, padPx+Math.cos(a)*padPx*ring, padPx+Math.sin(a)*padPx*ring);
+      }
+    }
+  }
+  g.drawImage(sil? tinted(c.img,w,h,fill) : c.img, padPx, padPx);
+  c._fx=out; c._fxKey=key; c._fxPad=padPx;
+  return out;
+}
+
+/* ---------- render ---------- */
+function view(W,H){ return {W,H,ppc:S.view.ppc,camX:S.view.camX,groundY:H*S.view.groundFrac}; }
+const sx = (v,cm)=> (cm - v.camX)*v.ppc;
+const sy = (v,cm)=> v.groundY - cm*v.ppc;
+
+function drawBG(v,g,transparent){
+  if(!transparent){
+    g.fillStyle=S.set.bgColor; g.fillRect(0,0,v.W,v.H);
+    if(bgImg){
+      g.save(); g.globalAlpha=S.set.bgOpacity;
+      const iw=bgImg.width, ih=bgImg.height, m=S.set.bgMode;
+      if(m==="stretch") g.drawImage(bgImg,0,0,v.W,v.H);
+      else if(m==="tile"){ const p=g.createPattern(bgImg,"repeat"); g.fillStyle=p; g.fillRect(0,0,v.W,v.H); }
+      else{ const s = m==="cover"? Math.max(v.W/iw,v.H/ih) : Math.min(v.W/iw,v.H/ih);
+            g.drawImage(bgImg,(v.W-iw*s)/2,(v.H-ih*s)/2,iw*s,ih*s); }
+      g.restore();
+    }
+  }
+}
+function drawRuler(v,g){
+  if(!S.set.ruler) return;
+  const step=Math.max(0.5,S.set.rulerStep), lab=Math.max(0.5,S.set.rulerLabel);
+  const maxCm=v.groundY/v.ppc+50;
+  if(maxCm/step > 4000) return;             // guard against absurd line counts
+  g.save();
+  g.font = Math.round(S.set.fontSize*0.85)+"px system-ui,sans-serif";
+  g.textBaseline="bottom";
+  for(let i=1; i*step<=maxCm; i++){
+    const cm=i*step, y=sy(v,cm); if(y<-40) break;
+    const major = Math.abs(cm/lab - Math.round(cm/lab)) < 1e-6;
+    g.strokeStyle=S.set.rulerColor; g.globalAlpha= major?0.55:0.22;
+    g.lineWidth = major?1.6:1;
+    g.beginPath(); g.moveTo(0,y+0.5); g.lineTo(v.W,y+0.5); g.stroke();
+    if(major){
+      g.globalAlpha=0.9; g.fillStyle=S.set.rulerColor;
+      const t=fmtRuler(cm);
+      g.fillText(t,8,y-3);
+      g.fillText(t, v.W-g.measureText(t).width-8, y-3);
+    }
+  }
+  g.restore();
+}
+function drawGround(v,g){
+  if(!S.set.ground) return;
+  g.save(); g.strokeStyle=S.set.rulerColor; g.globalAlpha=0.95; g.lineWidth=2;
+  g.beginPath(); g.moveTo(0,v.groundY+0.5); g.lineTo(v.W,v.groundY+0.5); g.stroke(); g.restore();
+}
+function charRect(v,c){
+  const m=metrics(c);
+  const w=m.wCm*v.ppc, h=m.hCm*v.ppc;
+  const x=sx(v,c.x)-w/2, y=sy(v,m.topCm);
+  return {x,y,w,h,m};
+}
+function drawChar(v,g,c,selected){
+  if(!c.visible) return;
+  const r=charRect(v,c);
+  const src=buildFX(c);
+  const p=(c._fxPad||0)*r.m.cmPerPx*v.ppc;         // outline padding in screen px
+  const X=r.x-p, Y=r.y-p, W=r.w+2*p, H=r.h+2*p;
+  g.save(); g.globalAlpha=c.opacity;
+  if(c.flip){ g.translate(X+W,Y); g.scale(-1,1); g.drawImage(src,0,0,W,H); }
+  else g.drawImage(src,X,Y,W,H);
+  g.restore();
+  if(selected){
+    g.save(); g.strokeStyle="#6aa9ff"; g.lineWidth=1.5; g.setLineDash([5,4]);
+    g.strokeRect(r.x-2,r.y-2,r.w+4,r.h+4); g.restore();
+    g.save(); g.strokeStyle="#6aa9ff"; g.globalAlpha=.85; g.lineWidth=1; g.setLineDash([2,3]);
+    const yh=sy(v,c.heightCm+c.yOff), yf=sy(v,c.yOff);
+    g.beginPath(); g.moveTo(r.x-14,yh); g.lineTo(r.x+r.w+14,yh); g.moveTo(r.x-14,yf); g.lineTo(r.x+r.w+14,yf); g.stroke(); g.restore();
+  }
+}
+function drawLabel(v,g,c){
+  if(!S.set.labels || !c.visible) return;
+  const cx=sx(v,c.x), fs=S.set.fontSize;
+  g.save(); g.textAlign="center"; g.textBaseline="top";
+  g.font="600 "+fs+"px system-ui,sans-serif";
+  const y=v.groundY+8;
+  g.lineWidth=Math.max(2,fs*0.22); g.strokeStyle="rgba(0,0,0,.65)"; g.lineJoin="round";
+  g.strokeText(c.name,cx,y);
+  g.fillStyle = S.set.nameColors ? c.color : S.set.textColor;
+  g.fillText(c.name,cx,y);
+  g.font=Math.round(fs*0.82)+"px system-ui,sans-serif";
+  const ht=fmtH(c.heightCm);
+  g.strokeText(ht,cx,y+fs*1.25); g.fillStyle=S.set.rulerColor; g.fillText(ht,cx,y+fs*1.25);
+  g.restore();
+}
+function renderTo(g,v,transparent){
+  g.clearRect(0,0,v.W,v.H);
+  drawBG(v,g,transparent);
+  drawRuler(v,g);
+  const order=[...S.chars].sort((a,b)=>a.z-b.z);
+  for(const c of order) drawChar(v,g,c,c===S.sel);
+  drawGround(v,g);
+  for(const c of order) drawLabel(v,g,c);
+}
+function draw(){
+  const dpr=window.devicePixelRatio||1, r=cv.getBoundingClientRect();
+  cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  renderTo(ctx, view(r.width,r.height), false);
+  $("#hint").style.display = S.chars.length? "none":"block";
+}
+
+/* ---------- layout ---------- */
+function arrange(){
+  let x=0;
+  for(const c of S.chars){
+    const m=metrics(c);
+    x += m.wCm/2; c.x=x; x += m.wCm/2 + S.set.gap;
+  }
+  fit(); save();
+}
+function fit(){
+  const r=cv.getBoundingClientRect();
+  if(!S.chars.length){ S.view.ppc=r.height*0.8/200; S.view.camX=-40; draw(); return; }
+  let l=Infinity,rt=-Infinity,top=0,bot=0;
+  for(const c of S.chars){ if(!c.visible) continue; const m=metrics(c);
+    l=Math.min(l,c.x-m.wCm/2); rt=Math.max(rt,c.x+m.wCm/2); top=Math.max(top,m.topCm); bot=Math.min(bot,m.botCm); }
+  if(!isFinite(l)){ draw(); return; }
+  const wCm=(rt-l)||100, hCm=(top-bot)||200;
+  const padX=r.width*0.06, padTop=r.height*0.07, padBot=r.height*(S.set.labels?0.16:0.08);
+  const ppcW=(r.width-padX*2)/wCm, ppcH=(r.height-padTop-padBot)/hCm;
+  S.view.ppc=Math.min(ppcW,ppcH);
+  S.view.groundFrac = (padTop + top*S.view.ppc)/r.height;
+  S.view.camX = l - ((r.width - wCm*S.view.ppc)/2)/S.view.ppc;
+  draw();
+}
+
+/* ---------- adding characters ---------- */
+function defaults(d){
+  return Object.assign({
+    color: PALETTE[0], silhouette:false, outline:false, outlineColor:"#ffffff", outlineCm:1.5,
+    flip:false, visible:true, opacity:1, yOff:0, x:0, z:0
+  }, d);
+}
+async function addFiles(files){
+  const arr=[...files].filter(f=>f.type.startsWith("image/"));
+  for(const f of arr){
+    const src=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(f);});
+    const img=await loadImg(src);
+    const bb=alphaBBox(img);
+    const col=PALETTE[S.chars.length % PALETTE.length];
+    S.chars.push(defaults({ id:uid++, name:f.name.replace(/\.[^.]+$/,""), heightCm:175,
+      img, imgSrc:src, floorPy:bb.bottom, headPy:bb.top,
+      z:S.chars.length, color:col, outlineColor:col }));
+  }
+  renderList(); arrange();
+}
+
+/* ---------- sidebar ---------- */
+function renderList(){
+  const box=$("#list");
+  if(!S.chars.length){ box.innerHTML='<div class="empty">No characters yet.<br>Load some PNGs (transparent background works best).</div>'; return; }
+  box.innerHTML="";
+  S.chars.forEach((c,i)=>{
+    const d=document.createElement("div");
+    d.className="card"+(c===S.sel?" sel open":"");
+    d.innerHTML=`
+      <div class="head">
+        <span class="bar" style="background:${c.color}"></span>
+        <img class="thumb" src="${c.imgSrc}">
+        <div class="nm"><b>${escapeHtml(c.name)}</b><span>${fmtH(c.heightCm)}${c.yOff?" · +"+Math.round(c.yOff)+" cm up":""}</span></div>
+        <div class="arrows">
+          <button class="mini" data-a="up" title="Move left">&#9664;</button>
+          <button class="mini" data-a="down" title="Move right">&#9654;</button>
+        </div>
+      </div>
+      <div class="body">
+        <div class="lbl"><span>Name &amp; color</span></div>
+        <div class="inline pick"><input type="color" data-f="color" title="Character color"><button class="icobtn" data-a="pickColor" title="Pick a color from the image">${EYE}</button><input type="text" data-f="name" value="${escapeHtml(c.name)}"></div>
+
+        <div class="lbl" style="margin-top:9px"><span>Height</span></div>
+        <div class="inline rev">
+          <input type="text" data-f="height" value="${fmtH(c.heightCm)}">
+          <button data-a="cal" title="Set where the floor and the top of the head are">Calibrate…</button>
+        </div>
+
+        <div class="grp"><h4>Appearance</h4>
+          <div class="tg">
+            <button data-a="sil" class="${c.silhouette?"on":""}">Silhouette</button>
+            <button data-a="outline" class="${c.outline?"on":""}">Outline</button>
+            <button data-a="flip" class="${c.flip?"on":""}">Flip</button>
+            <button data-a="vis" class="${c.visible?"on":""}">${c.visible?"Visible":"Hidden"}</button>
+          </div>
+          <div style="margin-top:9px;opacity:${c.outline?1:.45}">
+            <div class="lbl"><span>Outline</span><b data-v="out">${(+c.outlineCm).toFixed(1)} cm</b></div>
+            <div class="inline pick">
+              <input type="color" data-f="outlineColor" value="${c.outlineColor}" title="Outline color">
+              <button class="icobtn" data-a="pickOutline" title="Pick a color from the image">${EYE}</button>
+              <input type="range" data-f="outlineCm" min="0.3" max="10" step="0.1" value="${c.outlineCm}">
+            </div>
+            <button class="mini" data-a="matchOutline" style="width:100%;margin-top:6px">Match character color</button>
+          </div>
+        </div>
+
+        <div class="grp"><h4>Layer &amp; position</h4>
+          <div class="seg">
+            <button data-a="front">Bring to front</button>
+            <button data-a="back">Send to back</button>
+          </div>
+          <div class="grid2" style="margin-top:9px">
+            <div>
+              <div class="lbl"><span>Opacity</span><b data-v="op">${Math.round(c.opacity*100)}%</b></div>
+              <input type="range" data-f="opacity" min="0.05" max="1" step="0.01" value="${c.opacity}">
+            </div>
+            <div>
+              <div class="lbl"><span>Elevation</span><b>cm</b></div>
+              <input type="number" data-f="yOff" value="${Math.round(c.yOff)}" step="1">
+            </div>
+          </div>
+        </div>
+
+        <button class="danger" data-a="del" style="width:100%;margin-top:11px;font-size:12px;padding:7px">Delete character</button>
+      </div>`;
+    d.querySelector(".head").addEventListener("click",e=>{
+      if(e.target.dataset.a) return;
+      S.sel = (S.sel===c? null : c); renderList(); draw();
+    });
+    d.querySelectorAll("[data-a]").forEach(b=>b.addEventListener("click",e=>{
+      e.stopPropagation(); act(c,i,b.dataset.a);
+    }));
+    d.querySelectorAll("[data-f]").forEach(inp=>{
+      const f=inp.dataset.f;
+      inp.addEventListener("input",()=>{
+        if(f==="name"){ c.name=inp.value; d.querySelector(".nm b").textContent=inp.value; }
+        else if(f==="height"){ const v=parseHeight(inp.value); if(v&&v>0){ c.heightCm=v; d.querySelector(".nm span").textContent=fmtH(c.heightCm); invalidate(c);} }
+        else if(f==="color"){ c.color=inp.value; d.querySelector(".bar").style.background=inp.value; invalidate(c); }
+        else if(f==="outlineColor"){ c.outlineColor=inp.value; invalidate(c); }
+        else if(f==="outlineCm"){ c.outlineCm=parseFloat(inp.value); invalidate(c);
+          d.querySelector('[data-v="out"]').textContent=c.outlineCm.toFixed(1)+" cm"; }
+        else if(f==="opacity"){ c.opacity=parseFloat(inp.value);
+          d.querySelector('[data-v="op"]').textContent=Math.round(c.opacity*100)+"%"; }
+        else if(f==="yOff") c.yOff=parseFloat(inp.value)||0;
+        draw(); save();
+      });
+      inp.addEventListener("change",()=>{ if(f==="height") inp.value=fmtH(c.heightCm); });
+    });
+    box.appendChild(d);
+  });
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+
+function act(c,i,a){
+  if(a==="up"&&i>0){ S.chars.splice(i,1); S.chars.splice(i-1,0,c); renderList(); arrange(); return; }
+  if(a==="down"&&i<S.chars.length-1){ S.chars.splice(i,1); S.chars.splice(i+1,0,c); renderList(); arrange(); return; }
+  if(a==="sil"){ c.silhouette=!c.silhouette; invalidate(c); }
+  if(a==="outline"){ c.outline=!c.outline; invalidate(c); }
+  if(a==="matchOutline"){ c.outlineColor=c.color; invalidate(c); }
+  if(a==="pickColor"){ openPicker(c,"color"); return; }
+  if(a==="pickOutline"){ openPicker(c,"outlineColor"); return; }
+  if(a==="flip") c.flip=!c.flip;
+  if(a==="vis") c.visible=!c.visible;
+  if(a==="front") c.z=Math.max(0,...S.chars.map(x=>x.z))+1;
+  if(a==="back") c.z=Math.min(0,...S.chars.map(x=>x.z))-1;
+  if(a==="del"){ S.chars.splice(i,1); if(S.sel===c) S.sel=null; }
+  if(a==="cal"){ openCal(c); return; }
+  renderList(); draw(); save();
+}
+
+/* ---------- color picker (sample colors straight off the artwork) ---------- */
+const EYE = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 3a2.8 2.8 0 0 0-4 0l-2 2-1-1-2 2 1 1-7 7v4h4l7-7 1 1 2-2-1-1 2-2a2.8 2.8 0 0 0 0-4z"/></svg>';
+const pcv=$("#pickCv"), pctx=pcv.getContext("2d",{willReadFrequently:true});
+let pk={c:null,field:null,hex:"#000000"};
+
+const hex2 = (r,g,b) => "#"+[r,g,b].map(v=>v.toString(16).padStart(2,"0")).join("");
+function lum(h){ const n=parseInt(h.slice(1),16);
+  return (0.299*(n>>16&255) + 0.587*(n>>8&255) + 0.114*(n&255))/255; }
+function setPickHex(h){ pk.hex=h; $("#pickHex").value=h; $("#pickPrev").style.background=h; }
+function pixelAt(x,y){
+  x=Math.max(0,Math.min(pcv.width-1,x|0)); y=Math.max(0,Math.min(pcv.height-1,y|0));
+  const d=pctx.getImageData(x,y,1,1).data;
+  return d[3]<8 ? null : hex2(d[0],d[1],d[2]);
+}
+function buildSwatches(c){
+  const MAX=170, sc=Math.min(1,MAX/Math.max(c.img.width,c.img.height));
+  const w=Math.max(1,Math.round(c.img.width*sc)), h=Math.max(1,Math.round(c.img.height*sc));
+  const t=document.createElement("canvas"); t.width=w; t.height=h;
+  const g=t.getContext("2d",{willReadFrequently:true}); g.drawImage(c.img,0,0,w,h);
+  let d; try{ d=g.getImageData(0,0,w,h).data; }catch(e){ $("#pickSwatches").innerHTML=""; return; }
+  const bins={};
+  for(let i=0;i<d.length;i+=4){
+    if(d[i+3]<160) continue;
+    const k=(d[i]>>4)+","+(d[i+1]>>4)+","+(d[i+2]>>4);
+    const b=bins[k]||(bins[k]={n:0,r:0,g:0,b:0});
+    b.n++; b.r+=d[i]; b.g+=d[i+1]; b.b+=d[i+2];
+  }
+  const top=Object.values(bins).sort((a,b)=>b.n-a.n).slice(0,12)
+    .map(b=>hex2(Math.round(b.r/b.n),Math.round(b.g/b.n),Math.round(b.b/b.n)));
+  $("#pickSwatches").innerHTML = top.map(h=>'<button class="swb" data-h="'+h+'" style="background:'+h+'" title="'+h+'"></button>').join("");
+  $("#pickSwatches").querySelectorAll("[data-h]").forEach(b=>b.onclick=()=>setPickHex(b.dataset.h));
+}
+function openPicker(c,field){
+  pk.c=c; pk.field=field;
+  $("#pickName").textContent = c.name+" \u00b7 "+(field==="color"?"character color":"outline color");
+  const availW=Math.max(320, Math.min(720, window.innerWidth*0.8));
+  const availH=Math.max(300, window.innerHeight*0.46);
+  const s=Math.min(availW/c.img.width, availH/c.img.height, 3);
+  pcv.width=Math.max(1,Math.round(c.img.width*s));
+  pcv.height=Math.max(1,Math.round(c.img.height*s));
+  pctx.clearRect(0,0,pcv.width,pcv.height);
+  pctx.drawImage(c.img,0,0,pcv.width,pcv.height);
+  setPickHex(c[field]);
+  buildSwatches(c);
+  $("#pickEyedrop").style.display = window.EyeDropper ? "" : "none";
+  $("#pickModal").classList.add("on");
+}
+pcv.addEventListener("mousemove",e=>{
+  const r=pcv.getBoundingClientRect();
+  const x=(e.clientX-r.left)*(pcv.width/r.width), y=(e.clientY-r.top)*(pcv.height/r.height);
+  const h=pixelAt(x,y), lp=$("#loupe"), L=$("#loupeCv"), z=9, n=11;
+  lp.style.display="block";
+  lp.style.left=Math.min(e.clientX-r.left+18, r.width-118)+"px";
+  lp.style.top=Math.min(e.clientY-r.top+18, r.height-140)+"px";
+  L.width=n*z; L.height=n*z;
+  const g=L.getContext("2d"); g.imageSmoothingEnabled=false;
+  g.fillStyle="#0d1017"; g.fillRect(0,0,L.width,L.height);
+  g.drawImage(pcv, Math.round(x)-(n>>1), Math.round(y)-(n>>1), n, n, 0, 0, L.width, L.height);
+  g.strokeStyle="#fff"; g.lineWidth=1.5; g.strokeRect((n>>1)*z+0.5,(n>>1)*z+0.5,z-1,z-1);
+  const hx=$("#loupeHex");
+  hx.textContent = h || "transparent";
+  hx.style.background = h || "transparent";
+  hx.style.color = h ? (lum(h)>0.55?"#000":"#fff") : "#93a0b8";
+});
+pcv.addEventListener("mouseleave",()=>{ $("#loupe").style.display="none"; });
+pcv.addEventListener("click",e=>{
+  const r=pcv.getBoundingClientRect();
+  const h=pixelAt((e.clientX-r.left)*(pcv.width/r.width),(e.clientY-r.top)*(pcv.height/r.height));
+  if(h) setPickHex(h);
+});
+$("#pickHex").addEventListener("input",e=>{
+  let v=e.target.value.trim(); if(v[0]!=="#") v="#"+v;
+  if(/^#[0-9a-fA-F]{6}$/.test(v)){ pk.hex=v.toLowerCase(); $("#pickPrev").style.background=pk.hex; }
+});
+$("#pickEyedrop").addEventListener("click",async()=>{
+  try{ const r=await new EyeDropper().open(); setPickHex(r.sRGBHex); }catch(e){}
+});
+$("#pickOk").addEventListener("click",()=>{
+  const c=pk.c; if(!c) return;
+  c[pk.field]=pk.hex; invalidate(c);
+  $("#pickModal").classList.remove("on"); renderList(); draw(); save();
+});
+$("#pickClose").addEventListener("click",()=>$("#pickModal").classList.remove("on"));
+
+/* ---------- calibration ---------- */
+let calC=null, calDrag=null;
+function openCal(c){
+  calC=c;
+  $("#calName").textContent=c.name;
+  $("#calHeight").value=fmtH(c.heightCm);
+  const im=$("#calImg");
+  im.onload=()=>{ placeCal(); };
+  im.src=c.imgSrc;
+  $("#calModal").classList.add("on");
+  if(im.complete) placeCal();
+}
+function placeCal(){
+  const im=$("#calImg"), h=im.clientHeight, ratio=h/calC.img.height;
+  $("#lineFloor").style.top=(calC.floorPy*ratio)+"px";
+  $("#lineHead").style.top=(calC.headPy*ratio)+"px";
+}
+function calMove(ev){
+  if(!calDrag) return;
+  const im=$("#calImg"), r=im.getBoundingClientRect();
+  let y=(ev.touches?ev.touches[0].clientY:ev.clientY)-r.top;
+  y=Math.max(0,Math.min(r.height,y));
+  calDrag.el.style.top=y+"px";
+  const py=y/(r.height/calC.img.height);
+  if(calDrag.k==="floor") calC.floorPy=py; else calC.headPy=py;
+  if(calC.floorPy - calC.headPy < 2) { if(calDrag.k==="floor") calC.floorPy=calC.headPy+2; else calC.headPy=calC.floorPy-2; }
+  invalidate(calC); draw();
+}
+["#lineFloor","#lineHead"].forEach(sel=>{
+  const el=$(sel), k = sel==="#lineFloor"?"floor":"head";
+  const start=e=>{ calDrag={el,k}; e.preventDefault(); };
+  el.addEventListener("mousedown",start); el.addEventListener("touchstart",start,{passive:false});
+});
+window.addEventListener("mousemove",calMove); window.addEventListener("touchmove",calMove,{passive:false});
+window.addEventListener("mouseup",()=>{ if(calDrag){calDrag=null; save();} });
+window.addEventListener("touchend",()=>{ if(calDrag){calDrag=null; save();} });
+$("#calWrap").addEventListener("click",e=>{   // clicking moves the nearest line
+  if(e.target.closest(".calLine")) return;
+  const im=$("#calImg"), r=im.getBoundingClientRect(), y=e.clientY-r.top;
+  if(y<0||y>r.height) return;
+  const py=y/(r.height/calC.img.height);
+  if(Math.abs(py-calC.floorPy) < Math.abs(py-calC.headPy)) calC.floorPy=py; else calC.headPy=py;
+  placeCal(); invalidate(calC); draw(); save();
+});
+$("#calAuto").addEventListener("click",()=>{
+  const bb=alphaBBox(calC.img); calC.floorPy=bb.bottom; calC.headPy=bb.top; placeCal(); invalidate(calC); draw(); save();
+});
+$("#calHeight").addEventListener("input",e=>{ const v=parseHeight(e.target.value); if(v&&v>0){ calC.heightCm=v; invalidate(calC); draw(); } });
+$("#calOk").addEventListener("click",()=>{ $("#calModal").classList.remove("on"); renderList(); arrange(); });
+$("#calClose").addEventListener("click",()=>{ $("#calModal").classList.remove("on"); renderList(); draw(); save(); });
+
+/* ---------- canvas interaction ---------- */
+let drag=null, panning=false, space=false, last=null;
+function pick(px,py){
+  const r=cv.getBoundingClientRect(), v=view(r.width,r.height);
+  const order=[...S.chars].filter(c=>c.visible).sort((a,b)=>b.z-a.z);
+  for(const c of order){
+    const q=charRect(v,c);
+    if(px>=q.x&&px<=q.x+q.w&&py>=q.y&&py<=q.y+q.h){
+      const ix=Math.floor((c.flip? (q.x+q.w-px) : (px-q.x))/q.w*c.img.width);
+      const iy=Math.floor((py-q.y)/q.h*c.img.height);
+      if(alphaAt(c,ix,iy)) return c;
+    }
+  }
+  return null;
+}
+function alphaAt(c,x,y){
+  if(!c._px){
+    const MAX=400, sc=Math.min(1,MAX/Math.max(c.img.width,c.img.height));
+    const w=Math.max(1,Math.round(c.img.width*sc)), h=Math.max(1,Math.round(c.img.height*sc));
+    const cc=document.createElement("canvas"); cc.width=w; cc.height=h;
+    const g=cc.getContext("2d",{willReadFrequently:true}); g.drawImage(c.img,0,0,w,h);
+    try{ c._px={d:g.getImageData(0,0,w,h).data,w,h,sc}; }catch(e){ c._px={d:null}; }
+  }
+  if(!c._px.d) return true;
+  const {d,w,h,sc}=c._px;
+  const px=Math.floor(x*sc), py=Math.floor(y*sc);
+  if(px<0||py<0||px>=w||py>=h) return false;
+  return d[(py*w+px)*4+3]>12;
+}
+cv.addEventListener("mousedown",e=>{
+  const r=cv.getBoundingClientRect(), px=e.clientX-r.left, py=e.clientY-r.top;
+  if(e.button===1||space){ panning=true; last={x:e.clientX,y:e.clientY}; cv.style.cursor="grabbing"; return; }
+  const c=pick(px,py);
+  S.sel=c; renderList();
+  if(c){ const v=view(r.width,r.height); drag={c,dx:c.x-(px/v.ppc+v.camX), dy:py, y0:c.yOff, shift:e.shiftKey}; cv.style.cursor="grabbing"; }
+  draw();
+});
+window.addEventListener("mousemove",e=>{
+  const r=cv.getBoundingClientRect(), px=e.clientX-r.left, py=e.clientY-r.top;
+  if(panning&&last){
+    const v=view(r.width,r.height);
+    S.view.camX -= (e.clientX-last.x)/v.ppc;
+    S.view.groundFrac += (e.clientY-last.y)/r.height;
+    last={x:e.clientX,y:e.clientY}; draw(); return;
+  }
+  if(drag){
+    const v=view(r.width,r.height);
+    if(e.shiftKey||drag.shift) drag.c.yOff = drag.y0 + (drag.dy-py)/v.ppc;
+    else drag.c.x = px/v.ppc + v.camX + drag.dx;
+    draw(); return;
+  }
+  if(!S.chars.length) return;
+  cv.style.cursor = pick(px,py)? "move" : (space?"grab":"default");
+});
+window.addEventListener("mouseup",()=>{
+  if(drag||panning){ drag=null; panning=false; last=null; cv.style.cursor="default"; renderList(); save(); }
+});
+cv.addEventListener("wheel",e=>{
+  e.preventDefault();
+  const r=cv.getBoundingClientRect(), px=e.clientX-r.left, py=e.clientY-r.top;
+  const v=view(r.width,r.height);
+  const wx=px/v.ppc+v.camX, wy=(v.groundY-py)/v.ppc;
+  const f=Math.exp(-e.deltaY*0.0012);
+  S.view.ppc=Math.max(0.05,Math.min(60,S.view.ppc*f));
+  S.view.camX = wx - px/S.view.ppc;
+  S.view.groundFrac = (py + wy*S.view.ppc)/r.height;
+  draw();
+},{passive:false});
+window.addEventListener("keydown",e=>{
+  if(/input|textarea|select/i.test(e.target.tagName)) return;
+  if(e.code==="Space"){ space=true; cv.style.cursor="grab"; e.preventDefault(); }
+  if(e.key==="Delete"&&S.sel){ const i=S.chars.indexOf(S.sel); act(S.sel,i,"del"); }
+  if(e.key==="f"||e.key==="F") fit();
+});
+window.addEventListener("keyup",e=>{ if(e.code==="Space"){ space=false; cv.style.cursor="default"; } });
+
+/* drag & drop */
+const stage=$("#stage");
+["dragenter","dragover"].forEach(ev=>stage.addEventListener(ev,e=>{e.preventDefault();$("#drop").classList.add("on");}));
+["dragleave","drop"].forEach(ev=>stage.addEventListener(ev,e=>{e.preventDefault();if(ev==="drop"||!stage.contains(e.relatedTarget))$("#drop").classList.remove("on");}));
+stage.addEventListener("drop",e=>{ e.preventDefault(); $("#drop").classList.remove("on"); if(e.dataTransfer.files.length) addFiles(e.dataTransfer.files); });
+
+/* ---------- export ---------- */
+function exportPNG(){
+  if(!S.chars.length) return;
+  const scale=parseFloat($("#expScale").value);
+  let l=Infinity,rt=-Infinity,top=0,bot=0;
+  for(const c of S.chars){ if(!c.visible) continue; const m=metrics(c);
+    const o=c.outline? (c.outlineCm||0):0;
+    l=Math.min(l,c.x-m.wCm/2-o); rt=Math.max(rt,c.x+m.wCm/2+o); top=Math.max(top,m.topCm+o); bot=Math.min(bot,m.botCm-o); }
+  if(!isFinite(l)) return;
+  const ppc = S.view.ppc*scale;
+  const padX=30*scale, padTop=40*scale, padBot=(S.set.labels? S.set.fontSize*2.6+26 : 26)*scale;
+  const W=Math.round((rt-l)*ppc+padX*2), H=Math.round((top-bot)*ppc+padTop+padBot);
+  const c2=document.createElement("canvas"); c2.width=W; c2.height=H;
+  const g=c2.getContext("2d");
+  const v={W,H,ppc,camX:l-padX/ppc,groundY:padTop+top*ppc};
+  const oldFS=S.set.fontSize, oldSel=S.sel;
+  S.set.fontSize=oldFS*scale; S.sel=null;
+  renderTo(g,v,!S.set.expBg);
+  S.set.fontSize=oldFS; S.sel=oldSel;
+  c2.toBlob(b=>{
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(b);
+    a.download="heights_"+new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")+".png";
+    a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  },"image/png");
+}
+
+/* ---------- save / load ---------- */
+const CHAR_KEYS=["name","heightCm","imgSrc","floorPy","headPy","x","yOff","z","color",
+  "silhouette","outline","outlineColor","outlineCm","flip","visible","opacity"];
+function serialize(){
+  return { v:2, set:S.set, view:S.view,
+    chars:S.chars.map(c=>{ const o={}; for(const k of CHAR_KEYS) o[k]=c[k]; return o; }) };
+}
+async function deserialize(o){
+  Object.assign(S.set,o.set||{}); Object.assign(S.view,o.view||{});
+  S.chars=[]; S.sel=null;
+  let i=0;
+  for(const d of (o.chars||[])){
+    try{
+      const img=await loadImg(d.imgSrc);
+      const col = d.color || d.silColor || PALETTE[i % PALETTE.length];
+      S.chars.push(defaults(Object.assign({},d,{id:uid++,img,color:col,
+        outlineColor:d.outlineColor||col, outlineCm:d.outlineCm==null?1.5:d.outlineCm})));
+    }catch(e){}
+    i++;
+  }
+  if(S.set.bgSrc){ try{ bgImg=await loadImg(S.set.bgSrc); }catch(e){ bgImg=null; } } else bgImg=null;
+  syncUI(); renderList(); draw();
+}
+// IndexedDB autosave (handles large projects)
+function idb(mode,fn){
+  return new Promise((res,rej)=>{
+    const rq=indexedDB.open("heightcmp",1);
+    rq.onupgradeneeded=()=>rq.result.createObjectStore("kv");
+    rq.onsuccess=()=>{ const db=rq.result; const t=db.transaction("kv",mode); const r=fn(t.objectStore("kv"));
+      t.oncomplete=()=>res(r&&r.result); t.onerror=()=>rej(t.error); };
+    rq.onerror=()=>rej(rq.error);
+  });
+}
+let saveT=null;
+function save(){ clearTimeout(saveT); saveT=setTimeout(()=>{ idb("readwrite",st=>st.put(serialize(),"proj")).catch(()=>{}); },500); }
+
+/* ---------- scene UI ---------- */
+function presetToCm(sel,v){
+  const inchOpts=["1","6","12","24"];       // feet-based options are inches; the rest are cm
+  return inchOpts.includes(v) ? parseFloat(v)*2.54 : parseFloat(v);
+}
+function cmToPreset(sel,cm){
+  for(const o of sel.options){ if(o.value==="custom") continue;
+    if(Math.abs(presetToCm(sel,o.value)-cm)<0.01) return o.value; }
+  return "custom";
+}
+function syncUI(){
+  $("#tRuler").classList.toggle("on",S.set.ruler);
+  $("#tGround").classList.toggle("on",S.set.ground);
+  $("#tLabels").classList.toggle("on",S.set.labels);
+  $("#tSil").classList.toggle("on",S.set.globalSil);
+  $("#tUniform").classList.toggle("on",S.set.uniformSil);
+  $("#tNameColors").classList.toggle("on",S.set.nameColors);
+  $("#tExpBg").classList.toggle("on",S.set.expBg);
+  $("#tOutlineAll").classList.toggle("on",S.chars.length>0 && S.chars.every(c=>c.outline));
+  $("#rulerStep").value=+S.set.rulerStep.toFixed(2); $("#rulerLabel").value=+S.set.rulerLabel.toFixed(2);
+  const sp=cmToPreset($("#stepPreset"),S.set.rulerStep), lp=cmToPreset($("#labelPreset"),S.set.rulerLabel);
+  $("#stepPreset").value=sp; $("#labelPreset").value=lp;
+  $("#customStepRow").style.display=(sp==="custom"||lp==="custom")?"grid":"none";
+  $("#units").value=S.set.units; $("#impStyle").value=S.set.impStyle;
+  $("#silColor").value=S.set.silColor;
+  $("#bgColor").value=S.set.bgColor; $("#bgMode").value=S.set.bgMode; $("#bgOpacity").value=S.set.bgOpacity;
+  $("#rulerColor").value=S.set.rulerColor; $("#textColor").value=S.set.textColor;
+  $("#fontSize").value=S.set.fontSize; $("#fsVal").textContent=S.set.fontSize;
+  $("#gap").value=S.set.gap; $("#gapVal").textContent=S.set.gap+" cm";
+}
+function toggle(id,key,extra){ $(id).addEventListener("click",()=>{
+  S.set[key]=!S.set[key];
+  if(key==="globalSil"||key==="uniformSil") S.chars.forEach(invalidate);
+  syncUI(); if(extra) extra(); draw(); save(); }); }
+toggle("#tRuler","ruler"); toggle("#tGround","ground"); toggle("#tLabels","labels");
+toggle("#tSil","globalSil"); toggle("#tUniform","uniformSil");
+toggle("#tNameColors","nameColors"); toggle("#tExpBg","expBg");
+$("#tOutlineAll").addEventListener("click",()=>{
+  const allOn=S.chars.length>0 && S.chars.every(c=>c.outline);
+  S.chars.forEach(c=>{ c.outline=!allOn; invalidate(c); });
+  syncUI(); renderList(); draw(); save();
+});
+function bind(id,key,cast){ $(id).addEventListener("input",e=>{ S.set[key]=cast?cast(e.target.value):e.target.value;
+  if(key==="silColor") S.chars.forEach(invalidate);
+  if(key==="fontSize") $("#fsVal").textContent=S.set.fontSize;
+  if(key==="gap") $("#gapVal").textContent=S.set.gap+" cm";
+  if(key==="impStyle") renderList();
+  draw(); save(); }); }
+bind("#rulerStep","rulerStep",Number); bind("#rulerLabel","rulerLabel",Number);
+bind("#silColor","silColor"); bind("#bgColor","bgColor"); bind("#impStyle","impStyle");
+bind("#bgMode","bgMode"); bind("#bgOpacity","bgOpacity",Number);
+bind("#rulerColor","rulerColor"); bind("#textColor","textColor");
+bind("#fontSize","fontSize",Number); bind("#gap","gap",Number);
+$("#stepPreset").addEventListener("input",e=>{
+  if(e.target.value!=="custom") S.set.rulerStep=presetToCm(e.target,e.target.value);
+  syncUI(); draw(); save();
+});
+$("#labelPreset").addEventListener("input",e=>{
+  if(e.target.value!=="custom") S.set.rulerLabel=presetToCm(e.target,e.target.value);
+  syncUI(); draw(); save();
+});
+$("#units").addEventListener("input",e=>{
+  S.set.units=e.target.value;
+  syncUI(); renderList(); draw(); save();
+});
+
+document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("#tabs button").forEach(x=>x.classList.remove("on"));
+  document.querySelectorAll(".pane").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); $("#pane-"+b.dataset.tab).classList.add("on");
+}));
+$("#btnAdd").addEventListener("click",()=>$("#fileImgs").click());
+$("#fileImgs").addEventListener("change",e=>{ addFiles(e.target.files); e.target.value=""; });
+$("#btnArrange").addEventListener("click",arrange);
+$("#btnFit").addEventListener("click",fit);
+$("#btnZoomIn").addEventListener("click",()=>{ S.view.ppc*=1.2; draw(); });
+$("#btnZoomOut").addEventListener("click",()=>{ S.view.ppc/=1.2; draw(); });
+$("#btnBg").addEventListener("click",()=>$("#fileBg").click());
+$("#fileBg").addEventListener("change",async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const src=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(f);});
+  S.set.bgSrc=src; bgImg=await loadImg(src); draw(); save(); e.target.value="";
+});
+$("#btnBgClear").addEventListener("click",()=>{ S.set.bgSrc=null; bgImg=null; draw(); save(); });
+$("#btnExport").addEventListener("click",exportPNG);
+$("#btnSave").addEventListener("click",()=>{
+  const b=new Blob([JSON.stringify(serialize())],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(b);
+  a.download="heights.json"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+});
+$("#btnLoad").addEventListener("click",()=>$("#fileProj").click());
+$("#fileProj").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const fr=new FileReader();
+  fr.onload=async()=>{ try{ await deserialize(JSON.parse(fr.result)); save(); }catch(err){ alert("Invalid file"); } };
+  fr.readAsText(f); e.target.value="";
+});
+$("#btnClear").addEventListener("click",()=>{
+  if(!confirm("Delete every character and the background?")) return;
+  S.chars=[]; S.sel=null; S.set.bgSrc=null; bgImg=null; renderList(); fit(); save();
+});
+window.addEventListener("resize",draw);
+
+/* ---------- init ---------- */
+syncUI(); renderList();
+idb("readonly",st=>st.get("proj")).then(o=>{ if(o) return deserialize(o); draw(); }).catch(()=>draw());
+</script>
+</body>
+</html>
