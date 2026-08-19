@@ -198,6 +198,9 @@ small.h{color:var(--dim);font-size:11px;display:block;margin-top:6px}
     </div>
     <div class="field"><label>Text size <span id="fsVal" style="color:var(--txt)">16</span></label><input type="range" id="fontSize" min="8" max="48" step="1" value="16"></div>
     <div class="field"><label>Spacing when arranging <span id="gapVal" style="color:var(--txt)">15 cm</span></label><input type="range" id="gap" min="-120" max="200" step="1" value="15"></div>
+    <hr>
+    <button id="btnResetScene" style="width:100%">Reset scene to defaults</button>
+    <small class="h">Puts the scale, units, silhouettes, background and text back the way they started. Characters, their colors and their positions are left alone.</small>
   </div>
 
   <div class="pane" id="pane-arch">
@@ -288,6 +291,7 @@ const S = {
   sel:null
 };
 let bgImg = null;
+const SET_DEFAULTS = JSON.parse(JSON.stringify(S.set));   // captured before any project loads
 
 /* ---------- helpers ---------- */
 function parseHeight(str){
@@ -1066,6 +1070,13 @@ $("#fileProj").addEventListener("change",e=>{
   const fr=new FileReader();
   fr.onload=async()=>{ try{ await deserialize(JSON.parse(fr.result)); save(); }catch(err){ alert("Invalid file"); } };
   fr.readAsText(f); e.target.value="";
+});
+$("#btnResetScene").addEventListener("click",()=>{
+  if(!confirm("Reset the scene settings (scale, units, silhouettes, background, text) to their defaults?\n\nYour characters and their positions stay as they are.")) return;
+  Object.assign(S.set, JSON.parse(JSON.stringify(SET_DEFAULTS)));
+  bgImg=null;                       // bgSrc was reset to null with the rest
+  S.chars.forEach(invalidate);      // silhouette fills depend on the scene settings
+  syncUI(); renderList(); draw(); save();
 });
 $("#btnClear").addEventListener("click",()=>{
   if(!confirm("Delete every character and the background?")) return;
