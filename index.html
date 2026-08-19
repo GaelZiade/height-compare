@@ -123,7 +123,7 @@ small.h{color:var(--dim);font-size:11px;display:block;margin-top:6px}
   <div class="pane on" id="pane-pj">
     <div class="row" style="margin-bottom:10px">
       <button class="primary" id="btnAdd">+ Load PNGs</button>
-      <button class="fix" id="btnArrange" title="Lay them out in a row">Arrange</button>
+      <button class="fix" id="btnArrange" title="Reset the layout: line everyone up in a row. Overwrites positions you moved by hand.">Line up</button>
     </div>
     <input type="file" id="fileImgs" accept="image/*" multiple hidden>
     <div id="list"></div>
@@ -515,8 +515,25 @@ function arrange(){
   }
   fit(); save();
 }
+/* Right edge of everything currently placed, in world cm. */
+function rightEdge(){
+  let e=null;
+  for(const c of S.chars){ const m=metrics(c); const x=c.x+m.wCm/2; if(e===null||x>e) e=x; }
+  return e;
+}
+/* Pans just enough to bring a character on screen. Never changes the zoom
+   or anybody's position, so an arranged layout survives. */
+function ensureVisible(c){
+  const r=cv.getBoundingClientRect();
+  if(r.width<2||r.height<2) return;
+  const v=view(r.width,r.height), m=metrics(c), pad=28;
+  const l=sx(v,c.x-m.wCm/2), rt=sx(v,c.x+m.wCm/2);
+  if(rt > r.width-pad) S.view.camX += (rt-(r.width-pad))/v.ppc;
+  else if(l < pad)     S.view.camX -= (pad-l)/v.ppc;
+}
 function fit(){
   const r=cv.getBoundingClientRect();
+  if(r.width<2||r.height<2) return;
   if(!S.chars.length){ S.view.ppc=r.height*0.8/200; S.view.camX=-40; draw(); return; }
   let l=Infinity,rt=-Infinity,top=0,bot=0;
   for(const c of S.chars){ if(!c.visible) continue; const m=metrics(c);
@@ -540,16 +557,24 @@ function defaults(d){
 }
 async function addFiles(files){
   const arr=[...files].filter(f=>f.type.startsWith("image/"));
+  const wasEmpty = S.chars.length===0;
+  let last=null;
   for(const f of arr){
     const src=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(f);});
     const img=await loadImg(src);
     const bb=alphaBBox(img);
     const col=PALETTE[S.chars.length % PALETTE.length];
-    S.chars.push(defaults({ id:uid++, name:f.name.replace(/\.[^.]+$/,""), heightCm:175,
+    const edge=rightEdge();                       // measured before the new one joins
+    const c=defaults({ id:uid++, name:f.name.replace(/\.[^.]+$/,""), heightCm:175,
       img, imgSrc:src, floorPy:bb.bottom, headPy:bb.top,
-      z:S.chars.length, color:col, outlineColor:col }));
+      z: S.chars.length? Math.max(...S.chars.map(x=>x.z))+1 : 0, color:col, outlineColor:col });
+    S.chars.push(c);
+    c.x = (edge===null? 0 : edge + S.set.gap) + metrics(c).wCm/2;   // parked to the right
+    last=c;
   }
-  renderList(); arrange();
+  renderList();
+  if(wasEmpty) arrange();
+  else { if(last) ensureVisible(last); draw(); save(); }
 }
 
 /* ---------- sidebar ---------- */
@@ -646,8 +671,11 @@ function renderList(){
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
 
 function act(c,i,a){
-  if(a==="up"&&i>0){ S.chars.splice(i,1); S.chars.splice(i-1,0,c); renderList(); arrange(); return; }
-  if(a==="down"&&i<S.chars.length-1){ S.chars.splice(i,1); S.chars.splice(i+1,0,c); renderList(); arrange(); return; }
+  // Swapping only the two x positions keeps the rest of the layout untouched.
+  if(a==="up"&&i>0){ const o=S.chars[i-1]; const t=c.x; c.x=o.x; o.x=t;
+    S.chars.splice(i,1); S.chars.splice(i-1,0,c); renderList(); draw(); save(); return; }
+  if(a==="down"&&i<S.chars.length-1){ const o=S.chars[i+1]; const t=c.x; c.x=o.x; o.x=t;
+    S.chars.splice(i,1); S.chars.splice(i+1,0,c); renderList(); draw(); save(); return; }
   if(a==="sil"){ c.silhouette=!c.silhouette; invalidate(c); }
   if(a==="outline"){ c.outline=!c.outline; invalidate(c); }
   if(a==="matchOutline"){ c.outlineColor=c.color; invalidate(c); }
@@ -794,7 +822,7 @@ $("#calAuto").addEventListener("click",()=>{
   const bb=alphaBBox(calC.img); calC.floorPy=bb.bottom; calC.headPy=bb.top; placeCal(); invalidate(calC); draw(); save();
 });
 $("#calHeight").addEventListener("input",e=>{ const v=parseHeight(e.target.value); if(v&&v>0){ calC.heightCm=v; invalidate(calC); draw(); } });
-$("#calOk").addEventListener("click",()=>{ $("#calModal").classList.remove("on"); renderList(); arrange(); });
+$("#calOk").addEventListener("click",()=>{ $("#calModal").classList.remove("on"); renderList(); draw(); save(); });
 $("#calClose").addEventListener("click",()=>{ $("#calModal").classList.remove("on"); renderList(); draw(); save(); });
 
 /* ---------- canvas interaction ---------- */
